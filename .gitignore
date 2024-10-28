@@ -1,0 +1,47 @@
+# Ignore environment variables
+.env
+
+# Ignore Python bytecode
+*.pyc
+__pycache__/
+
+# Ignore virtual environment
+env/
+venv/
+
+# Ignore SQLite database
+db.sqlite3
+
+# Ignore other temporary files
+*.log
+*.pot
+*.py[cod]
+*.swp
+*.swo
+.DS_Store
+
+# Ignore coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+*.iml
+
+# Ignore compiled C extensions
+*.so
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore files created by package managers
+node_modules/
+npm-debug.log
+yarn-error.log
+migrations
+
+summifyai.json
+pdfs
