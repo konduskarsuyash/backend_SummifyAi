@@ -325,22 +325,27 @@ class YouTubeSummaryCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         youtube_url = serializer.validated_data.get('youtube_url')
+        print("you tube url",youtube_url)
         
-        try:
-            transcript = extract_transcript_details(youtube_url)
-        except ValueError as e:
-            raise APIException(str(e))
+        # Extract transcript from YouTube
+        transcript = extract_transcript_details(youtube_url)
 
+        # Generate summary using Google Gemini
         summary = generate_gemini_content(transcript)
+
+        # Save the object in the database with the user
         instance = serializer.save(user=self.request.user, transcript=transcript, summary=summary)
-        return instance  
+        return instance  # Return the instance for access later
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
+            # Create the instance and retrieve it
             instance = self.perform_create(serializer)
+
+            # Only return the summary in the response
             summary_response = {
-                "summary": instance.summary  
+                "summary": instance.summary  # Access the generated summary from the saved instance
             }
             
             user_statistics = UserStatistics.objects.get(user=request.user)
@@ -348,6 +353,7 @@ class YouTubeSummaryCreateView(generics.CreateAPIView):
             user_statistics.save()
             return Response(summary_response, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
