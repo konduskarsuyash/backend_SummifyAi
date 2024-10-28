@@ -41,7 +41,7 @@ from django.core.files.storage import default_storage
 from .models import Video
 from .serializers import VideoSerializer
 from openai import OpenAI
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import ValidationError
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -325,33 +325,42 @@ class YouTubeSummaryCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         youtube_url = serializer.validated_data.get('youtube_url')
-        print("you tube url",youtube_url)
+        print("YouTube URL:", youtube_url)
         
-        # Extract transcript from YouTube
-        transcript = extract_transcript_details(youtube_url)
-
-        # Generate summary using Google Gemini
-        summary = generate_gemini_content(transcript)
-
-        # Save the object in the database with the user
-        instance = serializer.save(user=self.request.user, transcript=transcript, summary=summary)
-        return instance  # Return the instance for access later
+        try:
+            # Extract video information and available caption metadata
+            video_info = extract_transcript_details(youtube_url)
+            
+            # Generate content using the video information
+            summary = generate_gemini_content(video_info)
+            
+            # Save to database
+            instance = serializer.save(
+                user=self.request.user,
+                transcript=video_info,  # Store the video information
+                summary=summary
+            )
+            return instance
+            
+        except Exception as e:
+            raise ValidationError(f"Error processing video: {str(e)}")
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            # Create the instance and retrieve it
-            instance = self.perform_create(serializer)
-
-            # Only return the summary in the response
-            summary_response = {
-                "summary": instance.summary  # Access the generated summary from the saved instance
-            }
-            
-            user_statistics = UserStatistics.objects.get(user=request.user)
-            user_statistics.yt_summaries_generated += 1
-            user_statistics.save()
-            return Response(summary_response, status=status.HTTP_201_CREATED)
+            try:
+                instance = self.perform_create(serializer)
+                summary_response = {
+                    "summary": instance.summary
+                }
+                
+                user_statistics = UserStatistics.objects.get(user=request.user)
+                user_statistics.yt_summaries_generated += 1
+                user_statistics.save()
+                
+                return Response(summary_response, status=status.HTTP_201_CREATED)
+            except serializers.ValidationError as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
