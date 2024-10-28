@@ -165,6 +165,9 @@ SIMPLE_JWT = {
 }
 
 
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'https://backend-summifyai.onrender.com',  # optional: allow your deployed frontend if necessary
+]
 
 CORS_ALLOW_CREDENTIALS = True
