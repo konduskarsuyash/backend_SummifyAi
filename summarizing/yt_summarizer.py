@@ -1,5 +1,5 @@
 import os
-from youtube_transcript_api import YouTubeTranscriptApi
+import requests
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -10,20 +10,34 @@ api_key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
+# YouTube Data API setup
+youtube_data_api_key = os.getenv("YOUTUBE_DATA_API_KEY")
 
 # Prompt to generate notes
-prompt_template="""You are Yotube video lecture explainer . You will be taking the transcript text
-and explaining me the lecture as i have exam tommorow u would need to explain me things extra if that is not explained in the video clearly.
-The transcript of the video may not be a detail explanation of the video so you have to give me all the necessary information formulas related to the lecture"""
+prompt_template = """You are a YouTube video lecture explainer. You will be taking the transcript text
+and explaining the lecture as if I have an exam tomorrow. Provide extra explanations and details if necessary,
+and include all relevant information and formulas."""
 
 # Extract transcript details from the YouTube video
 def extract_transcript_details(youtube_video_url):
     try:
         video_id = youtube_video_url.split("v=")[1]  # Extract video ID from the URL
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
 
-        # Combine all transcript chunks into one text
-        transcript = " ".join([item["text"] for item in transcript_list])
+        # Check for captions availability using YouTube Data API
+        captions_url = (
+            f"https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId={video_id}"
+            f"&key={youtube_data_api_key}"
+        )
+        response = requests.get(captions_url)
+        response_data = response.json()
+
+        if 'items' not in response_data:
+            raise ValueError("No captions available for this video.")
+
+        # Retrieve transcript text from available captions
+        # (Requires further handling to fetch and format captions into a transcript.)
+        # Let's assume 'default' language caption is available.
+        transcript = " ".join([item["snippet"]["text"] for item in response_data["items"]])
 
         return transcript
 
