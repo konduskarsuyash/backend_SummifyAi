@@ -509,6 +509,7 @@ client = OpenAI(api_key=open_ai_key)
 
 class VideoUploadView(APIView):
     def post(self, request):
+        print(request.data)
         serializer = VideoSerializer(data=request.data)
         if serializer.is_valid():
             video_instance = serializer.save()  # Save the video file

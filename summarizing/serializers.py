@@ -41,4 +41,4 @@ class GeneratedQuizSerializer(serializers.ModelSerializer):
 class VideoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video
-        fields = ['video_file']
+        fields = ['video_file', 'audio_file']  # Include audio_file in the fields
