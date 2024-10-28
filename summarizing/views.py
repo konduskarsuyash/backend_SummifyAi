@@ -41,6 +41,7 @@ from django.core.files.storage import default_storage
 from .models import Video
 from .serializers import VideoSerializer
 from openai import OpenAI
+from rest_framework.exceptions import APIException
 
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -325,25 +326,21 @@ class YouTubeSummaryCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         youtube_url = serializer.validated_data.get('youtube_url')
         
-        # Extract transcript from YouTube
-        transcript = extract_transcript_details(youtube_url)
+        try:
+            transcript = extract_transcript_details(youtube_url)
+        except ValueError as e:
+            raise APIException(str(e))
 
-        # Generate summary using Google Gemini
         summary = generate_gemini_content(transcript)
-
-        # Save the object in the database with the user
         instance = serializer.save(user=self.request.user, transcript=transcript, summary=summary)
-        return instance  # Return the instance for access later
+        return instance  
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            # Create the instance and retrieve it
             instance = self.perform_create(serializer)
-
-            # Only return the summary in the response
             summary_response = {
-                "summary": instance.summary  # Access the generated summary from the saved instance
+                "summary": instance.summary  
             }
             
             user_statistics = UserStatistics.objects.get(user=request.user)

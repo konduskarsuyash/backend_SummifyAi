@@ -3,7 +3,7 @@ import requests
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables
+load_dotenv()
 
 # Google Gemini model setup
 api_key = os.getenv("GOOGLE_API_KEY")
@@ -14,16 +14,14 @@ model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 youtube_data_api_key = os.getenv("YOUTUBE_DATA_API_KEY")
 
 # Prompt to generate notes
-prompt_template = """You are a YouTube video lecture explainer. You will be taking the transcript text
-and explaining the lecture as if I have an exam tomorrow. Provide extra explanations and details if necessary,
-and include all relevant information and formulas."""
+prompt_template = """You are a YouTube video lecture explainer. You will take the transcript text
+and explain the lecture, providing extra details if necessary, with all relevant information and formulas."""
 
-# Extract transcript details from the YouTube video
 def extract_transcript_details(youtube_video_url):
     try:
-        video_id = youtube_video_url.split("v=")[1]  # Extract video ID from the URL
+        video_id = youtube_video_url.split("v=")[1]  # Extract video ID
 
-        # Check for captions availability using YouTube Data API
+        # Use YouTube Data API to check for captions availability
         captions_url = (
             f"https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId={video_id}"
             f"&key={youtube_data_api_key}"
@@ -31,17 +29,20 @@ def extract_transcript_details(youtube_video_url):
         response = requests.get(captions_url)
         response_data = response.json()
 
-        if 'items' not in response_data:
+        # Check if there are captions available
+        if 'items' not in response_data or len(response_data["items"]) == 0:
             raise ValueError("No captions available for this video.")
 
-        # Retrieve transcript text from available captions
-        # (Requires further handling to fetch and format captions into a transcript.)
-        # Let's assume 'default' language caption is available.
-        transcript = " ".join([item["snippet"]["text"] for item in response_data["items"]])
+        # Here we would need additional logic to retrieve the actual caption text
+        # YouTube Data API v3 does not directly provide captions; you might need a caption URL
+
+        # Placeholder to show how you'd combine available captions (requires actual download of captions)
+        transcript = " ".join([item.get("snippet", {}).get("name", "Caption unavailable") for item in response_data["items"]])
 
         return transcript
 
     except Exception as e:
+        print(f"Error retrieving transcript: {e}")
         raise e
 
 # Generate content summary from the transcript using Google Gemini
